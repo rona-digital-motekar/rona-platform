@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum InvitationStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+  REFUNDED
+}
+
+model Customer {
+  id          String       @id @default(cuid())
+  name        String
+  email       String?
+  phone       String?
+  invitations Invitation[]
+  orders      Order[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Template {
+  id          String       @id @default(cuid())
+  name        String
+  slug        String       @unique
+  version     String       @default("0.1.0")
+  description String?
+  invitations Invitation[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Invitation {
+  id          String           @id @default(cuid())
+  slug        String           @unique
+  title       String
+  data        Json
+  status      InvitationStatus @default(DRAFT)
+  customerId  String
+  templateId  String
+  customer    Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  template    Template         @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  domains     Domain[]
+  orders      Order[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([customerId])
+  @@index([templateId])
+  @@index([status])
+}
+
+model Domain {
+  id           String     @id @default(cuid())
+  hostname     String     @unique
+  isPrimary    Boolean    @default(false)
+  verifiedAt   DateTime?
+  invitationId String
+  invitation   Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@index([invitationId])
+}
+
+model Order {
+  id           String      @id @default(cuid())
+  customerId   String
+  invitationId String?
+  amount       Int         @default(0)
+  currency     String      @default("IDR")
+  status       OrderStatus @default(PENDING)
+  notes        String?
+  customer     Customer    @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  invitation   Invitation? @relation(fields: [invitationId], references: [id], onDelete: SetNull)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([customerId])
+  @@index([invitationId])
+  @@index([status])
+}

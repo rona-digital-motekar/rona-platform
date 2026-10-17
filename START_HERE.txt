@@ -1,0 +1,16 @@
+MULAI DI SINI - RONA PLATFORM
+
+1. Repo GitHub yang dituju: rona-platform.
+2. Untuk sekarang, jangan buat atau isi database dulu. Prototype demo tidak butuh database.
+3. Buka repo di GitHub Codespaces. Unggah ZIP ini ke folder proyek Codespaces.
+4. Buka Terminal dan jalankan (sesuaikan nama ZIP jika berbeda):
+   unzip rona-platform-starter.zip -d /tmp/rona-upload
+   cp -a /tmp/rona-upload/rona-platform-starter/. .
+   rm rona-platform-starter.zip
+   npm install
+   npm run dev
+5. Buka tab Ports lalu buka port 3000 di browser.
+6. Tes halaman utama, buka dua undangan demo, tes tombol dan swipe.
+7. Setelah berhasil, simpan ke GitHub dengan git add ., git commit, dan git push.
+
+Data acara hanya contoh. Belum ada login, backend RSVP, database terhubung, pembayaran, atau domain customer.
