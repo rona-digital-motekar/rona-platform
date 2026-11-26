@@ -1,5 +1,8 @@
 {
   "name": "Rona Platform",
   "description": "Digital wedding invitation platform by Rona Digital Motekar with animated scene navigation and mobile-first experience.",
-  "requestFeedback": false
+  "requestFeedback": false,
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

@@ -1,20 +1,26 @@
 import { notFound } from "next/navigation";
-import InvitationExperience from "@/components/InvitationExperience";
-import { invitations } from "@/lib/invitations";
+import TemplateDispatcher from "@/components/templates/TemplateDispatcher";
+import { getInvitationPageBundle } from "@/lib/server/store";
+
+export const dynamic = "force-dynamic";
 
 type InvitationPageProps = {
   params: Promise<{ slug: string }>;
 };
 
-export function generateStaticParams() {
-  return Object.keys(invitations).map((slug) => ({ slug }));
-}
-
 export default async function InvitationPage({ params }: InvitationPageProps) {
   const { slug } = await params;
-  const invitation = invitations[slug];
+  const bundle = await getInvitationPageBundle(slug);
 
-  if (!invitation) notFound();
+  if (!bundle) {
+    notFound();
+  }
 
-  return <InvitationExperience invitation={invitation} />;
+  return (
+    <TemplateDispatcher
+      invitation={bundle.invitation}
+      template={bundle.template}
+      initialRsvps={bundle.rsvps}
+    />
+  );
 }

@@ -1,0 +1,72 @@
+================================================================================
+LAPORAN TEKNIS: PERBAIKAN INTERAKSI TOMBOL "BUKA LEMBARAN UNDANGAN"
+Proyek: Rona Digital Motekar (rona-platform)
+Target: Template Rona Storybook Cinematic (/i/dimas-sarah)
+Tanggal: 18 Oktober 2026
+================================================================================
+
+1. RINGKASAN MASALAH
+Sebelum perbaikan, saat tombol "Buka Lembaran Undangan" ditekan pada demo
+Storybook Cinematic (/i/dimas-sarah), tidak terjadi transisi visual atau navigasi
+ke babak berikutnya.
+
+2. AKAR MASALAH (ROOT CAUSE)
+a. Tumpang Tindih CSS (Sticky Nav Bar Overlay):
+   Komponen ".storybook-bottom-nav" diatur dengan "position: sticky; bottom: 0; z-index: 10;".
+   Sementara ".storybook-stage" hanya memiliki padding bawah 32px dan tombol
+   ".storybook-open-btn" tidak memiliki z-index eksplisit.
+   Pada resolusi mobile atau viewport iframe AI Studio (~600-750px), tinggi kartu
+   sampul (~650px) menyebabkan area tombol "Buka Lembaran Undangan" tertutup oleh
+   area transparan dan background bar navigasi bawah. Akibatnya event klik tidak
+   sampai ke elemen tombol.
+
+b. State Updater Closure & Posisi Scroll:
+   Fungsi navigasi sebelumnya menggunakan nilai state langsung "goTo(chapter + 1)"
+   yang rentan terhadap stale closure. Selain itu, ketiadaan reset scroll
+   menyebabkan saat pengguna men-scroll ke bawah untuk menekan tombol, babak
+   kedua (Profil Mempelai) yang lebih ringkas berada di luar jangkauan pandang viewport.
+
+c. Akses Properti & Latensi Sentuh:
+   Akses karakter inisial polaroid belum memiliki fallback aman jika nama kosong,
+   dan tombol belum memiliki properti CSS "touch-action: manipulation" untuk
+   menghilangkan latensi ketukan pada layar sentuh.
+
+3. PERUBAHAN KODE (FILES CHANGED)
+a. src/components/templates/StorybookCinematicTemplate.tsx
+   - Mengubah fungsi nextChapter & prevChapter menjadi functional update:
+     setChapter((prev) => Math.min(CHAPTERS.length - 1, prev + 1))
+     dengan dependensi stabil [] sehingga bebas stale closure.
+   - Menambahkan reset scroll otomatis (window.scrollTo({ top: 0, behavior: "smooth" }))
+     pada setiap perpindahan babak sehingga lembaran baru langsung terlihat di tengah layar.
+   - Menambahkan atribut id="btn-open-storybook", data-testid="open-invitation-btn",
+     dan aria-label pada tombol cover.
+   - Menambahkan safe fallback monogram pada polaroid mempelai.
+
+b. src/app/globals.css
+   - Menambah padding bawah pada ".storybook-stage" dari 32px menjadi 96px (dan 88px pada mobile),
+     menjamin kartu sampul dan tombolnya berada sepenuhnya di atas area navigasi bawah.
+   - Menambahkan "position: relative; z-index: 2;" pada stage dan "z-index: 3;" pada kartu lembaran.
+   - Menambahkan "position: relative; z-index: 10; touch-action: manipulation; user-select: none;"
+     serta efek hover & active shadow pada ".storybook-open-btn".
+   - Menyempurnakan keyframe "@keyframes storybookIn" (translasi Y 16px & scale 0.99 ke 1)
+     agar transisi lembaran cerita terasa jelas dan sinematik.
+
+4. HASIL PENGUJIAN LENGKAP
+- TypeScript Check (npx tsc --noEmit)            : LULUS (0 error)
+- ESLint Audit (npm run lint)                   : LULUS (0 error, 0 warning)
+- Applet Compilation (compile_applet)           : LULUS (Build succeeded)
+- Route / (Landing Page & Katalog Publik)       : HTTP 200 OK
+- Route /i/raka-alya (Demo Raka & Alya)         : HTTP 200 OK
+- Route /i/andika-nadira (Demo Andika & Nadira) : HTTP 200 OK
+- Route /i/dimas-sarah (Demo Storybook)         : HTTP 200 OK
+- Route /operator (Operator Dashboard)          : HTTP 200 OK
+- Route /operator/templates (Manajemen Template): HTTP 200 OK
+- Simulasi Transisi Babak (Bab 0 s.d. Bab 5)    : LULUS (Seluruh 6 babak render sempurna)
+- Keamanan Navigasi Publik                      : LULUS (0 tautan operator di halaman publik)
+
+5. CATATAN LINGKUNGAN GIT
+Container kerja AI Studio menyediakan snapshot kode tanpa direktori .git lokal
+(fatal: not a git repository). Perubahan tersimpan secara langsung dan permanen
+di filesystem workspace proyek, siap di-commit saat disinkronisasi ke repository GitHub
+pada branch "platform-foundation".
+================================================================================
